@@ -39,3 +39,15 @@ def create_trip(request: TripRequest):
         "daily_budget": daily_budget,
         "category": category,
     }
+
+@app.get("/api/v1/recommendations")
+def get_places(destination: str):
+    return {
+        "places": recommendation_place(destination)
+    }
+
+@app.get("/api/v1/transportations")
+def get_transportations():
+    return {
+        "transportations": recommendation_transportation()
+    }
