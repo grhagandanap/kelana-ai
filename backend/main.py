@@ -1,30 +1,41 @@
-# function to print trip summary
-from services.trip_service import get_trip_category, get_travel_season, calculate_daily_budget, recommendation_place 
+from fastapi import FastAPI
+from pydantic import BaseModel
+from services.trip_service import (
+    calculate_daily_budget,
+    get_trip_category,
+    recommendation_place,
+    recommendation_transportation
+)
 
-def print_trip_summary(destination, days, budget, currency, travel_month):
-    
-    print(30*"=")
-    print("\nKelanaAI\n")
-    print(30*"=")
-    
-    print(f"Destination : {destination}")
-    print(f"Days        : {days}")
-    print(f"Budget      : {budget:.0f} {currency}")
-    print(f"Category    : {get_trip_category(budget)}")
-    print(f"Daily Budget: {calculate_daily_budget(budget, days):.0f} {currency}")
-    print(f"Travel Month: {travel_month}")
-    print(f"Season      : {get_travel_season(travel_month)}")
-    print(f"\nRecommended Places:")
-    for place in recommendation_place(destination):
-        print(f" - {place}")
+class TripRequest(BaseModel):
+	destination: 	str
+	days: 		int
+	budget:		float
 
+app = FastAPI()
 
-destination     = input("Enter destination: ")
-country         = input("Enter country: ")
-days            = int(input("Enter days: "))
-budget          = float(input("Enter budget: "))
-currency        = input("Enter currency: ")
-travel_month    = input("Enter travel month: ")
+# a GET endpoint at the root path
+@app.get("/")
+def home():
+  return {
+    "message" : "Welcome to KelanaAI"
+  }
 
-# invoke function
-print_trip_summary(destination, days, budget, currency, travel_month)
+# POST endpoint — receives JSON, returns JSON
+@app.post("/api/v1/trips")
+def create_trip(request: TripRequest):
+
+    daily_budget = calculate_daily_budget(
+        request.budget, request.days
+    )
+    category = get_trip_category(
+        request.budget
+    )
+
+    return {
+        "destination": request.destination,
+        "days": request.days,
+        "budget": request.budget,
+        "daily_budget": daily_budget,
+        "category": category,
+    }

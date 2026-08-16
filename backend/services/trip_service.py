@@ -21,3 +21,12 @@ def recommendation_place(destination):
     if destination == "Japan":
         return ['Tokyo Tower', 'Shibuya', 'Mount Fuji']
 
+def recommendation_transportation(category):
+    if category == "Backpacker":
+        return "Bus"
+    elif category == "Standard":
+        return "Train"
+    elif category == "Luxury":
+        return "Flight"
+    else:
+        return "Unknown"
