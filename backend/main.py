@@ -81,3 +81,40 @@ def get_transportations():
     return {
         "transportations": recommendation_transportation()
     }
+
+@app.put("/api/v1/trips/{trip_id}")
+def update_trip(trip_id: int, update_budget: int):
+    db = SessionLocal()
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    db.close()
+
+    if trip is None:
+        raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
+    
+    trip.budget = update_budget
+    trip.daily_budget = calculate_daily_budget(update_budget, trip.days)
+    trip.category = get_trip_category(update_budget)
+    
+    db = SessionLocal()
+    db.add(trip)
+    db.commit()
+    db.refresh(trip)
+    db.close()
+    
+    return trip
+
+@app.delete("/api/v1/trips/{trip_id}")
+def delete_trip(trip_id: int):
+    db = SessionLocal()
+    trip = db.query(Trip).filter(Trip.id == trip_id).first()
+    db.close()
+
+    if trip is None:
+        raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
+    
+    db = SessionLocal()
+    db.delete(trip)
+    db.commit()
+    db.close()
+    
+    return {"message": f"Trip with id {trip_id} deleted"}
