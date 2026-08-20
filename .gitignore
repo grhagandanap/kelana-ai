@@ -1,0 +1,68 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+.eggs/
+wheels/
+pip-wheel-metadata/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.pyc
+
+# FastAPI / Uvicorn / Gunicorn
+*.log
+*.pid
+
+# Testing
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+nosetests.xml
+
+# Type checkers / linters
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pyre/
+
+# Databases
+*.sqlite3
+*.db
+*.db-journal
+
+# Alembic (keep migration scripts, ignore local artifacts if any)
+# alembic/versions/*.pyc
+
+# Docker
+*.env.docker
+
+# IDEs / editors
+
+*.pyc
