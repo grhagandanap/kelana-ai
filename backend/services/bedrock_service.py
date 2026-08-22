@@ -21,7 +21,6 @@ def configure_bedrock_client():
     if not region:
         raise ValueError("AWS_REGION is not set in .env")
  
- 
     client = boto3.client(
         service_name="bedrock-runtime",
         region_name=region,
@@ -56,7 +55,11 @@ def get_ai_recommendation(
         "You are an experienced travel planner.\n"
         f"Plan a {days}-day itinerary for {destination}.\n"
         f"Budget: USD {budget}\n"
-        f"Travel Style: {travel_style}"
+        f"Travel Style: {travel_style}\n\n"
+        f"For each dayit mus contain this:\n"
+        f"1. Morning activites: give 2-3 activities to do in the morning\n"
+        f"2. Afternoon activites: give recommendation for cultural sites and local experiences"
+        f"3. Evening activites: give recommendation for dinner and halal nightlife\n"
     )
  
     try:
