@@ -8,11 +8,13 @@ from services.trip_service import (
 )
 from database import init_db, SessionLocal
 from models.trip import Trip
+from services.bedrock_service import get_ai_recommendation
 
 class TripRequest(BaseModel):
-	destination: 	str
-	days: 		int
-	budget:		float
+	destination : 	str
+	days        : 	int
+	budget      :	float
+	travel_style:	str
 
 app = FastAPI()
 
@@ -27,7 +29,7 @@ def home():
 
 # POST endpoint — receives JSON, returns JSON
 @app.post("/api/v1/trips")
-def create_trip(request: TripRequest):
+async def create_trip(request: TripRequest):
 
     daily_budget = calculate_daily_budget(
         request.budget, request.days
@@ -42,6 +44,11 @@ def create_trip(request: TripRequest):
         budget=request.budget,
         daily_budget=daily_budget,
         category=category,
+        ai_recommendation=get_ai_recommendation(
+            request.destination, 
+            request.days, 
+            request.budget, 
+            request.travel_style)
     )
 
     # save to db
