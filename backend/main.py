@@ -9,13 +9,30 @@ from services.trip_service import (
 from database import init_db, SessionLocal
 from models.trip import Trip
 from services.bedrock_service import get_ai_recommendation
+from fastapi.middleware.cors import CORSMiddleware
 
 class TripRequest(BaseModel):
 	destination : 	str
 	days        : 	int
 	budget      :	float
+	travel_style:	str
+
+# adding cors
+
 
 app = FastAPI()
+
+origins = [
+    "http://localhost:3000",       # Next.js dev server
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],   # or ["GET", "POST", "PUT", "DELETE"]
+    allow_headers=["*"],
+)
 
 init_db()
 
@@ -42,7 +59,13 @@ async def create_trip(request: TripRequest):
         days=request.days,
         budget=request.budget,
         daily_budget=daily_budget,
-        category=category
+        category=category,
+        ai_recommendation=get_ai_recommendation(
+            request.destination, 
+            request.days, 
+            request.budget, 
+            request.travel_style
+        )
     )
 
     # save to db
