@@ -52,8 +52,8 @@ export default function HomePage() {
               </span>
             </div>
             <div className="flex items-center gap-8">
-              <a href="#" className="text-slate-300 hover:text-cyan-400 transition font-bold">Home</a>
-              <button onClick={scrollToForm} className="text-slate-300 hover:text-cyan-400 transition font-bold">Trip</button>
+              <a href="/" className="text-slate-300 hover:text-cyan-400 transition font-bold">Home</a>
+              <a href="/trips" className="text-slate-300 hover:text-cyan-400 transition font-bold">Trip</a>
               <a href="/about" className="text-slate-300 hover:text-cyan-400 transition font-bold">About</a>
             </div>
           </div>
