@@ -1,4 +1,4 @@
-import { Trip } from "@/types/trip";
+import { Trip, TripInput } from "@/types/trip";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -23,7 +23,7 @@ export async function getTrip(id: number): Promise<Trip> {
   return res.json();
 }
 
-export async function generateTrip(data: unknown): Promise<Trip> {
+export async function generateTrip(data: TripInput): Promise<Trip> {
   const res = await fetch(`${API_URL}/trips`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
