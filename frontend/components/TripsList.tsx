@@ -1,36 +1,54 @@
 "use client";
+import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 
 import Link from "next/link";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import TripCard from "@/components/TripCard";
 import { Trip } from "@/types/trip";
 
-const CATEGORY_OPTIONS = [
-  { value: "all", label: "All styles" },
-  { value: "budget", label: "Budget-friendly" },
-  { value: "solo", label: "Solo adventure" },
-  { value: "family", label: "Family trip" },
-  { value: "luxury", label: "Luxury experience" },
-  { value: "adventure", label: "Adventure seeker" },
-  { value: "relaxation", label: "Relaxation & wellness" },
+const TRAVEL_STYLE_OPTIONS = [
+  { value: "All", label: "All styles" },
+  { value: "Couple", label: "Couple" },
+  { value: "Solo", label: "Solo" },
+  { value: "Family", label: "Family" },
 ];
+
+const CATEGORY_OPTIONS = [
+  { value: "Backpacker", label: "Backpacker" },
+  { value: "Standard", label: "Standard" },
+  { value: "Luxury", label: "Luxury" },
+];
+
+const PAGE_SIZE = 10;
 
 export default function TripsList({ initialTrips }: { initialTrips: Trip[] }) {
   const [search, setSearch] = useState("");
-  const [category, setCategory] = useState("all");
+  const [travelStyle, setTravelStyle] = useState("All");
+  const [page, setPage] = useState(1);
 
   const filteredTrips = useMemo(() => {
     return initialTrips.filter((trip) => {
       const matchesSearch = trip.destination
         .toLowerCase()
         .includes(search.toLowerCase());
-      const matchesCategory =
-        category === "all" || trip.category === category;
-      return matchesSearch && matchesCategory;
+      const matchesTravelStyle = travelStyle === "All" || trip.travel_style === travelStyle;
+      return matchesSearch && matchesTravelStyle;
     });
-  }, [initialTrips, search, category]);
+  }, [initialTrips, search, travelStyle]);
 
-  const hasActiveFilters = search.length > 0 || category !== "all";
+  // Reset to page 1 whenever filters change so you don't land on an empty page
+  useEffect(() => {
+    setPage(1);
+  }, [search, travelStyle]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTrips.length / PAGE_SIZE));
+
+  const paginatedTrips = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return filteredTrips.slice(start, start + PAGE_SIZE);
+  }, [filteredTrips, page]);
+
+  const hasActiveFilters = search.length > 0 || travelStyle !== "All";
 
   return (
     <>
@@ -50,17 +68,21 @@ export default function TripsList({ initialTrips }: { initialTrips: Trip[] }) {
             onChange={(e) => setSearch(e.target.value)}
             className="w-full rounded-2xl border border-white/20 bg-slate-900/50 px-5 py-4 text-white placeholder-slate-500 outline-none transition-all duration-300 focus:border-cyan-400/50 focus:bg-slate-900/80 focus:shadow-lg focus:shadow-cyan-400/10 sm:px-6"
           />
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full shrink-0 rounded-2xl border border-white/20 bg-slate-900/50 px-5 py-4 text-white outline-none transition-all duration-300 focus:border-cyan-400/50 focus:bg-slate-900/80 focus:shadow-lg focus:shadow-cyan-400/10 sm:w-56 sm:px-6"
-          >
-            {CATEGORY_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
+
+          <div className="relative w-full shrink-0 sm:w-56">
+            <select
+              value={travelStyle}
+              onChange={(e) => setTravelStyle(e.target.value)}
+              className="w-full appearance-none rounded-2xl border border-white/20 bg-slate-900/50 py-4 pl-6 pr-10 text-white outline-none transition-all duration-300 focus:border-cyan-400/50 focus:bg-slate-900/80 focus:shadow-lg focus:shadow-cyan-400/10"
+            >
+              {TRAVEL_STYLE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          </div>
         </div>
       </div>
 
@@ -70,8 +92,8 @@ export default function TripsList({ initialTrips }: { initialTrips: Trip[] }) {
             {initialTrips.length === 0
               ? "You haven't created any trips yet."
               : hasActiveFilters
-              ? "No trips match your filters."
-              : "No trips match your search."}
+                ? "No trips match your filters."
+                : "No trips match your search."}
           </p>
           {initialTrips.length === 0 && (
             <Link
@@ -83,11 +105,39 @@ export default function TripsList({ initialTrips }: { initialTrips: Trip[] }) {
           )}
         </div>
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredTrips.map((trip) => (
-            <TripCard key={trip.id} trip={trip} />
-          ))}
-        </div>
+        <>
+          <div className="">
+            {paginatedTrips.map((trip) => (
+              <TripCard key={trip.id} trip={trip} />
+            ))}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="mt-10 flex items-center justify-center gap-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="flex items-center gap-1 rounded-xl border border-white/20 px-4 py-2 text-sm text-white transition disabled:opacity-40 disabled:cursor-not-allowed hover:border-cyan-400/50"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Prev
+              </button>
+
+              <span className="px-4 text-sm text-slate-300">
+                Page {page} of {totalPages}
+              </span>
+
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="flex items-center gap-1 rounded-xl border border-white/20 px-4 py-2 text-sm text-white transition disabled:opacity-40 disabled:cursor-not-allowed hover:border-cyan-400/50"
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
+        </>
       )}
     </>
   );

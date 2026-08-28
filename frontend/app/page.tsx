@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { generateTrip } from "@/services/tripService";
-import type { TripInput } from "@/types/trip";
 
 export default function HomePage() {
   const router = useRouter();
@@ -167,12 +166,9 @@ export default function HomePage() {
                     <option value="" disabled className="text-slate-500">
                       Choose your vibe...
                     </option>
-                    <option value="budget">Budget-friendly</option>
-                    <option value="solo">Solo adventure</option>
-                    <option value="family">Family trip</option>
-                    <option value="luxury">Luxury experience</option>
-                    <option value="adventure">Adventure seeker</option>
-                    <option value="relaxation">Relaxation & wellness</option>
+                    <option value="Family">Family</option>
+                    <option value="Solo">Solo</option>
+                    <option value="Couple">Couple</option>
                   </select>
                 </div>
 
@@ -213,61 +209,6 @@ export default function HomePage() {
           </section>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="border-t border-white/10 bg-slate-900/50 px-4 py-8 sm:px-6 md:px-8 lg:px-12">
-        <div className="mx-auto max-w-4xl">
-          <div className="grid gap-8 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3">
-            <div className="space-y-3">
-              <h3 className="text-lg font-semibold text-white">Kelana AI</h3>
-              <p className="text-sm text-slate-400">
-                Your AI-powered travel planning assistant. Create perfect
-                itineraries in seconds.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <h4 className="font-medium text-white">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li>
-                  <a href="#" className="hover:text-cyan-400 transition">
-                    Home
-                  </a>
-                </li>
-                <li>
-                  <a href="/about" className="hover:text-cyan-400 transition">
-                    About
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div className="space-y-3">
-              <h4 className="font-medium text-white">Support</h4>
-              <ul className="space-y-2 text-sm text-slate-400">
-                <li>
-                  <a href="#" className="hover:text-cyan-400 transition">
-                    Help Center
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-cyan-400 transition">
-                    Contact Us
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-cyan-400 transition">
-                    FAQ
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="mt-8 border-t border-white/10 pt-8 text-center text-sm text-slate-400">
-            <p>
-              &copy; {new Date().getFullYear()} Kelana AI. All rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

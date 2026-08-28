@@ -55,11 +55,12 @@ async def create_trip(request: TripRequest):
     )
 
     trip = Trip(
-        destination=request.destination,
-        days=request.days,
-        budget=request.budget,
+        destination =request.destination,
+        days        =request.days,
+        budget      =request.budget,
         daily_budget=daily_budget,
-        category=category,
+        category    =category,
+        travel_style=request.travel_style,
         ai_recommendation=get_ai_recommendation(
             request.destination, 
             request.days, 
