@@ -23,7 +23,7 @@ function formatCurrency(value: number) {
 }
 
 export default function TripCard({ trip }: { trip: Trip }) {
-  const badgeStyle =
+  const travelStyle =
     TRAVEL_STYLE_OPTIONS[trip.travel_style] ??
     "bg-slate-400/10 text-slate-300 border-slate-400/30";
 
@@ -45,7 +45,7 @@ export default function TripCard({ trip }: { trip: Trip }) {
           </h3>
           {trip.travel_style && (
             <span
-              className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium capitalize ${badgeStyle}`}
+              className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium capitalize ${travelStyle}`}
             >
               {trip.travel_style}
             </span>
