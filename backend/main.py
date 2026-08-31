@@ -176,7 +176,7 @@ def update_trip(trip_id: int, update_budget: int, user: User = Depends(get_curre
     ).first()
     
     if trip is None:
-        raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
+        raise HTTPException(status_code=403, detail=f"Trip with id {trip_id} not found")
     
     trip.budget = update_budget
     trip.daily_budget = calculate_daily_budget(update_budget, trip.days)
@@ -190,14 +190,14 @@ def update_trip(trip_id: int, update_budget: int, user: User = Depends(get_curre
 
 @app.delete("/api/v1/trips/{trip_id}")
 def delete_trip(trip_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    
+
     trip = db.query(Trip).filter(
         Trip.id == trip_id,
         Trip.user_id == user.id,
     ).first()
 
     if trip is None:
-        raise HTTPException(status_code=404, detail=f"Trip with id {trip_id} not found")
+        raise HTTPException(status_code=403, detail=f"Trip with id {trip_id} not found")
     
     db.delete(trip)
     db.commit()
