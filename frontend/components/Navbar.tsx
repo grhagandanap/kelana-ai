@@ -2,23 +2,38 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-// import { LogOut, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { LogOut, User } from "lucide-react";
 import { logout } from "@/services/authService";
-
-const links = [
-  { href: "/", label: "Home" },
-  { href: "/trips", label: "Trip" },
-  { href: "/about", label: "About" },
-];
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // Re-check on every route change — covers login/logout/register redirects
+    setIsAuthenticated(!!localStorage.getItem("access_token"));
+  }, [pathname]);
 
   function handleLogout() {
     logout();
+    setIsAuthenticated(false);
     router.push("/login");
   }
+
+  const publicLinks = [
+    { href: "/", label: "Home" },
+    { href: "/about", label: "About" },
+  ];
+
+  const authedLinks = [
+    { href: "/", label: "Home" },
+    { href: "/trips", label: "Trip" },
+    { href: "/about", label: "About" },
+  ];
+
+  const links = isAuthenticated ? authedLinks : publicLinks;
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/10">
@@ -30,12 +45,11 @@ export default function Navbar() {
           >
             Kelana AI
           </Link>
+
           <div className="flex items-center gap-8">
             {links.map((link) => {
               const isActive =
-                link.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(link.href);
+                link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
               return (
                 <Link
                   key={link.href}
@@ -49,23 +63,34 @@ export default function Navbar() {
               );
             })}
 
-            <Link
-              href="/profile"
-              className={`flex items-center gap-1.5 font-bold transition ${
-                pathname.startsWith("/profile")
-                  ? "text-cyan-400"
-                  : "text-slate-300 hover:text-cyan-400"
-              }`}
-            >
-              Profile
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link
+                  href="/profile"
+                  className={`flex items-center gap-1.5 font-bold transition ${
+                    pathname.startsWith("/profile")
+                      ? "text-cyan-400"
+                      : "text-slate-300 hover:text-cyan-400"
+                  }`}
+                >
+                  Profile
+                </Link>
 
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 font-bold text-slate-300 transition hover:text-red-400"
-            >
-              Log Out
-            </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-1.5 font-bold text-slate-300 transition hover:text-red-400"
+                >
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-2 font-bold text-slate-950 transition hover:from-cyan-300 hover:to-blue-400"
+              >
+                Log In
+              </Link>
+            )}
           </div>
         </div>
       </div>
