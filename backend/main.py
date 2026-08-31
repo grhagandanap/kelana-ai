@@ -1,5 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from services.trip_service import (
     calculate_daily_budget,
     get_trip_category,
@@ -23,6 +23,16 @@ class UserRequest(BaseModel):
     name        : str
     email       : str
     password    : str
+
+class LoginRequest(BaseModel):
+    email       : str
+    password    : str
+
+class UserOut(BaseModel):
+    id: int
+    name: str | None = None
+    email: str
+    model_config = ConfigDict(from_attributes=True)
 
 app = FastAPI()
 
@@ -68,7 +78,7 @@ async def register_user(request: UserRequest, db: Session = Depends(get_db)):
     return user
 
 @app.post("/api/v1/auth/login")
-async def login_user(request: UserRequest, db: Session = Depends(get_db)):
+async def login_user(request: LoginRequest, db: Session = Depends(get_db)):
 
     user = db.query(User).filter(User.email == request.email).first()
 
@@ -203,3 +213,7 @@ def delete_trip(trip_id: int, user: User = Depends(get_current_user), db: Sessio
     db.commit()
     
     return {"message": f"Trip with id {trip_id} deleted"}
+
+@app.get("/api/v1/users/me", response_model=UserOut)
+def get_me (user: User = Depends(get_current_user)):
+    return user

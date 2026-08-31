@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+// import { LogOut, User } from "lucide-react";
+import { logout } from "@/services/authService";
 
 const links = [
   { href: "/", label: "Home" },
@@ -11,6 +13,12 @@ const links = [
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  function handleLogout() {
+    logout();
+    router.push("/login");
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-white/10">
@@ -33,15 +41,31 @@ export default function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={`font-bold transition ${
-                    isActive
-                      ? "text-cyan-400"
-                      : "text-slate-300 hover:text-cyan-400"
+                    isActive ? "text-cyan-400" : "text-slate-300 hover:text-cyan-400"
                   }`}
                 >
                   {link.label}
                 </Link>
               );
             })}
+
+            <Link
+              href="/profile"
+              className={`flex items-center gap-1.5 font-bold transition ${
+                pathname.startsWith("/profile")
+                  ? "text-cyan-400"
+                  : "text-slate-300 hover:text-cyan-400"
+              }`}
+            >
+              Profile
+            </Link>
+
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 font-bold text-slate-300 transition hover:text-red-400"
+            >
+              Log Out
+            </button>
           </div>
         </div>
       </div>

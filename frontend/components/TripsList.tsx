@@ -1,10 +1,10 @@
 "use client";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-
 import Link from "next/link";
 import { useState, useMemo, useEffect } from "react";
 import TripCard from "@/components/TripCard";
 import { Trip } from "@/types/trip";
+import { getTrips } from "@/services/tripService";
 
 const TRAVEL_STYLE_OPTIONS = [
   { value: "All", label: "All styles" },
@@ -13,18 +13,30 @@ const TRAVEL_STYLE_OPTIONS = [
   { value: "Family", label: "Family" },
 ];
 
-const CATEGORY_OPTIONS = [
-  { value: "Backpacker", label: "Backpacker" },
-  { value: "Standard", label: "Standard" },
-  { value: "Luxury", label: "Luxury" },
-];
-
 const PAGE_SIZE = 10;
 
-export default function TripsList({ initialTrips }: { initialTrips: Trip[] }) {
+export default function TripsList() {
+  const [initialTrips, setInitialTrips] = useState<Trip[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const [search, setSearch] = useState("");
   const [travelStyle, setTravelStyle] = useState("All");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    async function loadTrips() {
+      try {
+        const data = await getTrips();
+        setInitialTrips(data);
+      } catch (err) {
+        setLoadError(err instanceof Error ? err.message : "Failed to load trips");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadTrips();
+  }, []);
 
   const filteredTrips = useMemo(() => {
     return initialTrips.filter((trip) => {
@@ -36,7 +48,6 @@ export default function TripsList({ initialTrips }: { initialTrips: Trip[] }) {
     });
   }, [initialTrips, search, travelStyle]);
 
-  // Reset to page 1 whenever filters change so you don't land on an empty page
   useEffect(() => {
     setPage(1);
   }, [search, travelStyle]);
@@ -49,6 +60,22 @@ export default function TripsList({ initialTrips }: { initialTrips: Trip[] }) {
   }, [filteredTrips, page]);
 
   const hasActiveFilters = search.length > 0 || travelStyle !== "All";
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="rounded-3xl border border-red-400/30 bg-red-400/10 p-12 text-center text-red-300">
+        {loadError}
+      </div>
+    );
+  }
 
   return (
     <>
