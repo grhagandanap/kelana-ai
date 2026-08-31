@@ -1,7 +1,11 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { getTrip } from "@/services/tripService";
 import MarkdownContent from "./MarkdownContent";
+import { Trip } from "@/types/trip";
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -11,28 +15,58 @@ function formatCurrency(value: number) {
   }).format(value);
 }
 
-export default async function TripDetailPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = await params;
-  const tripId = Number(id);
+export default function TripDetailPage() {
+  const params = useParams<{ id: string }>();
+  const tripId = Number(params.id);
 
-  if (Number.isNaN(tripId)) {
-    notFound();
+  const [trip, setTrip] = useState<Trip | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (Number.isNaN(tripId)) {
+      setError("Invalid trip ID");
+      setIsLoading(false);
+      return;
+    }
+
+    async function loadTrip() {
+      try {
+        const data = await getTrip(tripId);
+        setTrip(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Trip not found");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    loadTrip();
+  }, [tripId]);
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+      </div>
+    );
   }
 
-  let trip;
-  try {
-    trip = await getTrip(tripId);
-  } catch {
-    notFound();
+  if (error || !trip) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-center text-white">
+        <div>
+          <p className="mb-4 text-xl font-semibold">Trip not found</p>
+          <p className="mb-6 text-slate-400">{error}</p>
+          <Link href="/trips" className="text-cyan-400 hover:text-cyan-300">
+            Back to trips
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-white">
-
       <main className="px-4 py-12 pt-28 sm:px-6 md:px-8 lg:px-12">
         <div className="mx-auto max-w-4xl">
           <Link
