@@ -10,7 +10,7 @@ from database import init_db, get_db, SessionLocal
 from models.trip import Trip, User
 from services.bedrock_service import get_ai_recommendation
 from services.auth_service import hash_password, verify_password, create_access_token, get_current_user
-from services.kb_service import ask_knowledge_base
+from services.kb_service import retrieve_and_generate
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -37,7 +37,6 @@ class UserOut(BaseModel):
 
 class QuestionRequest(BaseModel):
     question: str
-    answer: str
 
 app = FastAPI()
 
@@ -225,12 +224,14 @@ def get_me (user: User = Depends(get_current_user)):
 
 @app.post("/api/v1/ask")
 def ask_endpoint(request: QuestionRequest):
+
   # 1. Send question to Knowledge Base
-  answer = ask_knowledge_base(
+  result = retrieve_and_generate(
     request.question
   )
   # 2. Return grounded answer to frontend
   return {
     "question": request.question,
-    "answer": answer
+    "answer": result["answer"],
+    "source": result["source"]
   }
