@@ -1,30 +1,46 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import {
   getConversations,
   createConversation,
   sendMessage,
-  getMessages, // <-- new import
+  getMessages,
 } from "@/services/chatService";
 import type { Conversation, Message } from "@/types/chat";
+
+function formatTimestamp(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleTimeString(undefined, {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function ChatPage() {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [messagesLoading, setMessagesLoading] = useState(false); // <-- new
+  const [messagesLoading, setMessagesLoading] = useState(false);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
-  // --- new chat title modal (unchanged) ---
+  // tracks whether the next scroll should be instant (first open) or smooth (new message)
+  const isFirstLoadRef = useRef(true);
+
+  // --- new chat title modal ---
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [titleInput, setTitleInput] = useState("");
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+
+  const activeConversation = useMemo(
+    () => conversations.find((c) => c.id === activeId) ?? null,
+    [conversations, activeId]
+  );
 
   useEffect(() => {
     getConversations()
@@ -32,7 +48,7 @@ export default function ChatPage() {
       .catch(() => setError("Failed to load conversations."));
   }, []);
 
-  // NEW: fetch messages whenever the active conversation changes
+  // fetch messages whenever the active conversation changes
   useEffect(() => {
     if (activeId === null) {
       setMessages([]);
@@ -42,6 +58,7 @@ export default function ChatPage() {
     let cancelled = false;
     setMessagesLoading(true);
     setError(null);
+    isFirstLoadRef.current = true; // next scroll for this conversation should be instant
 
     getMessages(activeId)
       .then((msgs) => {
@@ -59,9 +76,22 @@ export default function ChatPage() {
     };
   }, [activeId]);
 
+  // auto-scroll: instant on first open of a conversation, smooth for new messages after that
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length === 0) return;
+
+    bottomRef.current?.scrollIntoView({
+      behavior: isFirstLoadRef.current ? "auto" : "smooth",
+    });
+    isFirstLoadRef.current = false;
   }, [messages]);
+
+  // also scroll while the assistant is "typing"
+  useEffect(() => {
+    if (loading) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [loading]);
 
   function openTitleModal(pending?: string) {
     setTitleInput("");
@@ -82,10 +112,8 @@ export default function ChatPage() {
       const conversation = await createConversation({ title });
       setConversations((prev) => [conversation, ...prev]);
       setActiveId(conversation.id);
-      setMessages([]);
       setTitleModalOpen(false);
 
-      // if this was triggered by "Send" with no active chat, deliver the message now
       if (pendingMessage) {
         await deliverMessage(conversation.id, pendingMessage);
         setPendingMessage(null);
@@ -122,7 +150,6 @@ export default function ChatPage() {
     setInput("");
 
     if (!activeId) {
-      // need a title first — stash the message and open the modal
       openTitleModal(content);
       return;
     }
@@ -159,38 +186,144 @@ export default function ChatPage() {
       </aside>
 
       {/* Main chat area */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 flex flex-col min-w-0">
+        {/* Conversation title header */}
+        <div className="border-b border-white/10 px-6 py-3">
+          <h1 className="truncate text-sm font-bold text-slate-100">
+            {activeConversation
+              ? activeConversation.title || `Conversation #${activeConversation.id}`
+              : "Select or start a conversation"}
+          </h1>
+        </div>
+
         <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {messages.length === 0 && (
+          {messagesLoading && (
+            <p className="text-slate-500 text-sm">Loading conversation...</p>
+          )}
+
+          {!messagesLoading && messages.length === 0 && (
             <p className="text-slate-500 text-sm">
               Start the conversation — ask about a destination, budget, or
               itinerary.
             </p>
           )}
 
-          {messages.map((m) => (
-            <div
-              key={m.id}
-              className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
-            >
-              {m.role === "user" ? (
-                <div className="max-w-lg rounded-2xl px-4 py-2 text-sm bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-medium">
-                  {m.content}
-                </div>
-              ) : (
-                <div className="max-w-lg rounded-2xl px-4 py-2 text-sm bg-white/5 text-slate-200 prose prose-invert prose-sm prose-p:my-2 prose-ul:my-2 prose-ol:my-2 max-w-none">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {m.content}
-                  </ReactMarkdown>
-                </div>
-              )}
-            </div>
-          ))}
+          {!messagesLoading &&
+            messages.map((m) => (
+              <div
+                key={m.id}
+                className={`flex ${
+                  m.role === "user" ? "justify-end" : "justify-start"
+                }`}
+              >
+                {m.role === "user" ? (
+                  <div className="flex max-w-lg flex-col items-end gap-1">
+                    <div className="rounded-2xl px-4 py-2.5 text-sm bg-gradient-to-r from-cyan-400 to-blue-500 text-slate-950 font-medium">
+                      {m.content}
+                    </div>
+                    <span className="px-1 text-[11px] text-slate-500">
+                      {formatTimestamp(m.created_at)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex max-w-2xl gap-3">
+                    <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-xs font-bold text-slate-950">
+                      K
+                    </div>
+                    <div className="flex flex-col items-start gap-1">
+                      <div className="rounded-2xl border border-white/5 bg-white/[0.03] px-5 py-4 text-sm leading-relaxed text-slate-200">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            h1: ({ children }) => (
+                              <h1 className="mb-2 mt-4 text-base font-bold text-cyan-400 first:mt-0">
+                                {children}
+                              </h1>
+                            ),
+                            h2: ({ children }) => (
+                              <h2 className="mb-2 mt-4 text-base font-bold text-cyan-400 first:mt-0">
+                                {children}
+                              </h2>
+                            ),
+                            h3: ({ children }) => (
+                              <h3 className="mb-1.5 mt-3 text-sm font-bold text-cyan-300 first:mt-0">
+                                {children}
+                              </h3>
+                            ),
+                            p: ({ children }) => (
+                              <p className="mb-3 last:mb-0">{children}</p>
+                            ),
+                            strong: ({ children }) => (
+                              <strong className="font-semibold text-slate-50">
+                                {children}
+                              </strong>
+                            ),
+                            ul: ({ children }) => (
+                              <ul className="mb-3 ml-4 list-disc space-y-1.5 last:mb-0">
+                                {children}
+                              </ul>
+                            ),
+                            ol: ({ children }) => (
+                              <ol className="mb-3 ml-4 list-decimal space-y-1.5 last:mb-0">
+                                {children}
+                              </ol>
+                            ),
+                            li: ({ children }) => (
+                              <li className="pl-1 marker:text-cyan-400">
+                                {children}
+                              </li>
+                            ),
+                            code: ({ children }) => (
+                              <code className="rounded bg-slate-800 px-1.5 py-0.5 text-xs text-cyan-300">
+                                {children}
+                              </code>
+                            ),
+                            a: ({ children, href }) => (
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-cyan-400 underline underline-offset-2 hover:text-cyan-300"
+                              >
+                                {children}
+                              </a>
+                            ),
+                            hr: () => <hr className="my-4 border-white/10" />,
+                          }}
+                        >
+                          {m.content}
+                        </ReactMarkdown>
+                      </div>
+                      <span className="px-1 text-[11px] text-slate-500">
+                        {formatTimestamp(m.created_at)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
 
+          {/* Typing indicator */}
           {loading && (
             <div className="flex justify-start">
-              <div className="rounded-2xl bg-white/5 px-4 py-2 text-sm text-slate-400">
-                Thinking...
+              <div className="flex max-w-2xl gap-3">
+                <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 text-xs font-bold text-slate-950">
+                  K
+                </div>
+                <div className="flex items-center gap-1.5 rounded-2xl border border-white/5 bg-white/[0.03] px-4 py-3">
+                  <span
+                    className="h-1.5 w-1.5 animate-bounce rounded-full bg-cyan-400"
+                    style={{ animationDelay: "0ms" }}
+                  />
+                  <span
+                    className="h-1.5 w-1.5 animate-bounce rounded-full bg-cyan-400"
+                    style={{ animationDelay: "150ms" }}
+                  />
+                  <span
+                    className="h-1.5 w-1.5 animate-bounce rounded-full bg-cyan-400"
+                    style={{ animationDelay: "300ms" }}
+                  />
+                </div>
               </div>
             </div>
           )}
