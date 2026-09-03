@@ -11,8 +11,8 @@ class Conversation(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     title = Column(String, nullable=True)
 
-    user = relationship("User", back_populates="coversations")
-    message = relationship("Message", back_populates="conversations")
+    user = relationship("User", back_populates="conversations")
+    messages = relationship("Message", back_populates="conversations")
 
 class Message(Base):
     __tablename__ = "messages"
@@ -23,5 +23,5 @@ class Message(Base):
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    conversation = relationship("Conversation", back_populates="messages")
+    conversations = relationship("Conversation", back_populates="messages")
     

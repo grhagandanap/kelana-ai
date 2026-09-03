@@ -8,7 +8,9 @@ from services.trip_service import (
 )
 from database import init_db, get_db, SessionLocal
 from models.trip import Trip, User
+from models.conversation import Conversation, Message
 from services.bedrock_service import get_ai_recommendation
+from services.chat_service import get_chat_reply
 from services.auth_service import hash_password, verify_password, create_access_token, get_current_user
 from services.kb_service import retrieve_and_generate
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +39,12 @@ class UserOut(BaseModel):
 
 class QuestionRequest(BaseModel):
     question: str
+
+class ConversationCreate(BaseModel):
+    title: str
+
+class MessageCreate(BaseModel):
+    content: str
 
 app = FastAPI()
 
@@ -235,3 +243,86 @@ def ask_endpoint(request: QuestionRequest):
     "answer": result["answer"],
     "source": result["source"]
   }
+
+# create conversation api
+@app.post("/api/v1/conversation")
+def create_conversation(request: ConversationCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    conversation = Conversation (
+        user_id = user.id,
+        title = request.title
+    )
+
+    db.add(conversation)
+    db.commit()
+    db.refresh(conversation)
+
+    return conversation
+
+
+@app.get("/api/v1/conversation")
+def get_conversation(user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    
+    conversations = db.query(Conversation).filter(Conversation.user_id == user.id).order_by(Conversation.created_at.desc()).all()
+
+    return conversations
+
+@app.post("/api/v1/conversation/{conversation_id}/message")
+def create_message(request: MessageCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+
+    conversation = db.query(Conversation).filter(Conversation.user_id == user.id).first()
+
+    user_message = Message(
+        conversation_id = conversation.id,
+        role="user",
+        content = request.content
+    )
+
+    db.add(user_message)
+    db.commit()
+    db.refresh(user_message)
+
+    history = db.query(Message).filter(Message.conversation_id == conversation.id,).order_by(Message.created_at.asc()).all()
+
+    try:
+        reply_text = get_chat_reply(history)
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    # save the assistant's reply
+    assistant_message = Message(
+        conversation_id=conversation.id,
+        role="assistant",
+        content=reply_text,
+    )
+
+    db.add(assistant_message)
+    db.commit()
+    db.refresh(assistant_message)
+
+    return assistant_message
+
+@app.get("/api/v1/conversation/{conversation_id}/message")
+def get_messages(
+    conversation_id: int,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    conversation = (
+        db.query(Conversation)
+        .filter(
+            Conversation.id == conversation_id,
+            Conversation.user_id == user.id,
+        )
+        .first()
+    )
+    if not conversation:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+
+    messages = (
+        db.query(Message)
+        .filter(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at.asc())
+        .all()
+    )
+    return messages

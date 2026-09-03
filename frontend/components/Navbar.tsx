@@ -30,6 +30,7 @@ export default function Navbar() {
   const authedLinks = [
     { href: "/", label: "Home" },
     { href: "/trips", label: "Trip" },
+    { href: "/chat", label: "Chat" },
     { href: "/about", label: "About" },
   ];
 

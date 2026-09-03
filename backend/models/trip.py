@@ -11,6 +11,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
 
     trips = relationship("Trip", back_populates="user")
+    conversations = relationship("Conversation", back_populates="user")
 
 class Trip(Base):
     __tablename__ = "trips"

@@ -14,7 +14,7 @@ export interface AuthResponse {
     token_type: string;
   }
 
-  export interface User {
+export interface User {
     id: number;
     name: string | null;
     email: string;
