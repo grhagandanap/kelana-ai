@@ -282,7 +282,7 @@ def create_message(request: MessageCreate, user: User = Depends(get_current_user
     db.commit()
     db.refresh(user_message)
 
-    history = db.query(Message).filter(Message.conversation_id == conversation.id,).order_by(Message.created_at.asc()).all()
+    history = db.query(Message).filter(Message.conversation_id == conversation.id).order_by(Message.created_at.asc()).all()
 
     try:
         reply_text = get_chat_reply(history)
